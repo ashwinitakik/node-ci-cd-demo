@@ -1,0 +1,43 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: |
+          echo "No tests configured"
+
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/node-ci-cd-demo:${{ github.sha }} .
+
+      - name: Log in to DockerHub
+        env:
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        run: |
+          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+      - name: Tag image as latest
+        run: docker tag ${{ secrets.DOCKER_USERNAME }}/node-ci-cd-demo:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/node-ci-cd-demo:latest
+
+      - name: Push images to DockerHub
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/node-ci-cd-demo:${{ github.sha }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/node-ci-cd-demo:latest
